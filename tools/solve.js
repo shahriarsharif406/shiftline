@@ -1,31 +1,34 @@
-// BFS bot: checks each level is solvable, and NOT solvable without shifting.
+// BFS bot. Usage: node tools/solve.js <level 1-based> <exit|noshift|shard0|shard1...>
+// Prints one JSON line. Used to prove levels are solvable (and not solvable without shifting).
 const Sim = require('../sim.js');
-const DT = 1/120, K = 8;
-function solve(L, opts, limit) {
+const DT = 1 / 120, K = 10;
+function solve(L, goal, limit) {
+  const opts = goal === 'noshift' ? { noShift: true } : {};
+  const shardIdx = goal.startsWith('shard') ? +goal.slice(5) : -1;
   const s0 = Sim.newState(L);
-  const key = s => [Math.round(s.x*6), Math.round(s.y*6), Math.round(s.vx), Math.round(s.vy/2), s.w, s.onGround?1:0, s.jh?1:0].join(',');
-  const nodes = [{ s: s0, p: -1, a: null }]; const seen = new Set([key(s0)]);
+  const key = s => [Math.round(s.x * 5), Math.round(s.y * 5), Math.round(s.vx), Math.round(s.vy / 3), s.w, s.onGround ? 1 : 0, s.jh ? 1 : 0].join(',');
+  const nodes = [{ s: s0 }]; const seen = new Set([key(s0)]);
   for (let i = 0; i < nodes.length && nodes.length < limit; i++) {
     const n = nodes[i];
     for (let d = -1; d <= 1; d++) for (let j = 0; j < 2; j++) for (let sh = 0; sh < 2; sh++) {
       if (sh && opts.noShift) continue;
       const s = Sim.cloneState(n.s);
-      for (let f = 0; f < K && !s.dead && !s.won; f++)
+      for (let f = 0; f < K && !s.dead && !s.won; f++) {
         Sim.step(L, s, { left: d < 0, right: d > 0, jump: !!j, shift: f === 0 && !!sh }, DT, opts);
+        if (shardIdx >= 0 && (s.got & (1 << shardIdx))) return { ok: true, n: nodes.length, time: s.time };
+      }
       if (s.dead) continue;
-      if (s.won) { let c = i, path = [[d,j,sh]]; while (nodes[c].p >= 0) { path.push(nodes[c].a); c = nodes[c].p; } return { ok: true, n: nodes.length, time: s.time, steps: path.length }; }
+      if (s.won && shardIdx < 0) return { ok: true, n: nodes.length, time: s.time };
+      if (s.won) continue;
       const k = key(s); if (seen.has(k)) continue; seen.add(k);
-      nodes.push({ s, p: i, a: [d,j,sh] });
+      nodes.push({ s });
     }
   }
-  return { ok: false, n: nodes.length };
+  return { ok: false, n: nodes.length, exhausted: nodes.length < limit };
 }
-let bad = 0;
-const only = process.argv[2] ? +process.argv[2] : 0;
-Sim.levels.forEach((L, i) => {
-  if (only && i+1 !== only) return;
-  const a = solve(L, {}, 2500000), b = solve(L, { noShift: true }, 2500000);
-  const good = a.ok && !b.ok; if (!good) bad++;
-  console.log(`L${i+1} ${L.name.padEnd(16)} solvable=${a.ok} (${a.n} nodes${a.ok ? ', ~'+a.time.toFixed(1)+'s' : ''})  solvableWithoutShift=${b.ok}  ${good ? 'OK' : '<<< PROBLEM'}`);
-});
-process.exit(bad ? 1 : 0);
+if (require.main === module) {
+  const li = +process.argv[2] - 1, goal = process.argv[3];
+  const r = solve(Sim.levels[li], goal, 3000000);
+  console.log(JSON.stringify(Object.assign({ level: li + 1, goal }, r)));
+}
+module.exports = { solve };
