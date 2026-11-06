@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SHIFTLINE</title>
+<style>
+  html,body{margin:0;height:100%;background:#07040f;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+  canvas{display:block;position:fixed;inset:0}
+  #touch{position:fixed;inset:auto 0 0 0;display:none;justify-content:space-between;padding:0 16px 18px;pointer-events:none;z-index:5}
+  #touch .grp{display:flex;gap:12px;pointer-events:auto}
+  #touch button{width:72px;height:72px;border-radius:22px;border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);
+    color:#fff;font:700 15px system-ui,sans-serif;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  #touch button:active{background:rgba(255,255,255,.3)}
+  @media (pointer:coarse){#touch{display:flex}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="touch">
+  <div class="grp"><button data-k="ArrowLeft">&#9664;</button><button data-k="ArrowRight">&#9654;</button></div>
+  <div class="grp"><button data-k="Shift">SHIFT</button><button data-k="Space">JUMP</button></div>
+</div>
+<script src="sim.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
